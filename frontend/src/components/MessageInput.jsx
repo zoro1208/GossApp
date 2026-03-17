@@ -8,8 +8,10 @@ const MessageInput = () => {
   const [text, setText] = useState("");
   const [imagePreview, setImagePreview] = useState(null);
   const fileInputRef = useRef(null);
-  const { sendMessage } = useChatStore();
 
+  const { sendMessage, replyingTo, clearReply } = useChatStore();
+
+  // IMAGE HANDLING
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file || !file.type.startsWith("image/")) {
@@ -19,8 +21,8 @@ const MessageInput = () => {
 
     try {
       const compressedFile = await imageCompression(file, {
-        maxSizeMB: 0.05, // 50KB = 0.05MB
-        maxWidthOrHeight: 600, // Optional: you can tune this for better compression
+        maxSizeMB: 0.05,
+        maxWidthOrHeight: 600,
         useWebWorker: true,
       });
 
@@ -31,7 +33,6 @@ const MessageInput = () => {
       reader.readAsDataURL(compressedFile);
     } catch (error) {
       toast.error("Image compression failed");
-      console.error("Compression error:", error);
     }
   };
 
@@ -40,6 +41,7 @@ const MessageInput = () => {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  // SEND MESSAGE
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!text.trim() && !imagePreview) return;
@@ -48,11 +50,14 @@ const MessageInput = () => {
       await sendMessage({
         text: text.trim(),
         image: imagePreview,
+        replyTo: replyingTo?._id, // ✅ reply id
       });
 
-      // Clear form
+      // clear form
       setText("");
       setImagePreview(null);
+      clearReply(); // ✅ clear reply
+
       if (fileInputRef.current) fileInputRef.current.value = "";
     } catch (error) {
       console.error("Failed to send message:", error);
@@ -61,6 +66,20 @@ const MessageInput = () => {
 
   return (
     <div className="p-4 w-full">
+
+      {/* ✅ REPLY PREVIEW */}
+      {replyingTo && (
+        <div className="mb-2 p-2 bg-base-200 rounded-lg flex justify-between items-center">
+          <div className="text-sm truncate">
+            Replying to: {replyingTo.text || "Image"}
+          </div>
+          <button onClick={clearReply}>
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
+      {/* IMAGE PREVIEW */}
       {imagePreview && (
         <div className="mb-3 flex items-center gap-2">
           <div className="relative">
@@ -71,8 +90,7 @@ const MessageInput = () => {
             />
             <button
               onClick={removeImage}
-              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300
-              flex items-center justify-center"
+              className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-base-300 flex items-center justify-center"
               type="button"
             >
               <X className="size-3" />
@@ -81,6 +99,7 @@ const MessageInput = () => {
         </div>
       )}
 
+      {/* INPUT */}
       <form onSubmit={handleSendMessage} className="flex items-center gap-2">
         <div className="flex-1 flex gap-2">
           <input
@@ -90,6 +109,7 @@ const MessageInput = () => {
             value={text}
             onChange={(e) => setText(e.target.value)}
           />
+
           <input
             type="file"
             accept="image/*"
@@ -100,13 +120,15 @@ const MessageInput = () => {
 
           <button
             type="button"
-            className={`hidden sm:flex btn btn-circle
-                     ${imagePreview ? "text-emerald-500" : "text-zinc-400"}`}
+            className={`hidden sm:flex btn btn-circle ${
+              imagePreview ? "text-emerald-500" : "text-zinc-400"
+            }`}
             onClick={() => fileInputRef.current?.click()}
           >
             <Image size={20} />
           </button>
         </div>
+
         <button
           type="submit"
           className="btn btn-sm btn-circle"
@@ -118,4 +140,5 @@ const MessageInput = () => {
     </div>
   );
 };
+
 export default MessageInput;
