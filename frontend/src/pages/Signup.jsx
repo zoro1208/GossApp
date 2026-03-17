@@ -22,7 +22,7 @@ const Signup = () => {
     const validateForm = () => {
         const { fullName, email, password } = formData;
 
-        if (!fullName || fullName.trim().length < 5) {
+        if (!fullName || fullName.trim().length < 2) {
             toast.error("Full name must be at least 6 characters");
             return false;
         }

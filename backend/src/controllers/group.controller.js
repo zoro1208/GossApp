@@ -8,6 +8,15 @@ export const createGroup = async (req, res) => {
   try {
     const { name, members } = req.body;
 
+    // Validation
+    if (!name || name.trim() === "") {
+      return res.status(400).json({ message: "Group name is required" });
+    }
+
+    if (!members || members.length === 0) {
+      return res.status(400).json({ message: "Please select at least one user" });
+    }
+
     const group = new Group({
       name,
       admin: req.user._id,
